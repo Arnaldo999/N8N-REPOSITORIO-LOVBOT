@@ -1,0 +1,274 @@
+{
+  "updatedAt": "2026-04-06T19:44:53.137Z",
+  "createdAt": "2026-04-06T10:08:16.725Z",
+  "id": "vF3bMbCzFz3D2W9z",
+  "name": "1. Onboarding Finish",
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "id": "webhook-onboarding",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        260,
+        300
+      ],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "meta-onboarding-finish",
+        "responseMode": "lastNode",
+        "responseData": "firstEntryJson"
+      },
+      "notes": "Recibe el POST de Meta cuando el cliente termina el embedded signup. El nombre del cliente viene como query param: ?client=NombreCliente"
+    },
+    {
+      "id": "code-extract",
+      "name": "Extraer IDs",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        500,
+        300
+      ],
+      "parameters": {
+        "language": "javaScript",
+        "mode": "runOnceForAllItems",
+        "jsCode": "// Extraer datos del embedded signup de Meta\nconst body = items[0].json.body || items[0].json;\nconst query = items[0].json.query || {};\n\n// El nombre del cliente viene como param de URL\nconst clientName = query.client || 'sin-nombre';\n\n// Meta envía estos datos en el callback del embedded signup\nconst wabaId = body.waba_id || body.currentWABAID || '';\nconst phoneId = body.phone_number_id || body.currentPhoneID || '';\nconst code = body.code || '';\n\nreturn [{\n  json: {\n    client_name: clientName,\n    waba_id: wabaId,\n    phone_number_id: phoneId,\n    code: code,\n    timestamp: new Date().toISOString(),\n    status: 'onboarding_complete'\n  }\n}];"
+      },
+      "notes": "Extrae WABA ID, Phone Number ID y el code temporal del body. El nombre del cliente viene del query param ?client=X"
+    },
+    {
+      "id": "set-response",
+      "name": "Almacenar IDs",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        740,
+        300
+      ],
+      "parameters": {
+        "mode": "manual",
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a1",
+              "name": "status",
+              "type": "string",
+              "value": "ok"
+            },
+            {
+              "id": "a2",
+              "name": "message",
+              "type": "string",
+              "value": "={{ 'Onboarding registrado para ' + $json.client_name }}"
+            },
+            {
+              "id": "a3",
+              "name": "client_name",
+              "type": "string",
+              "value": "={{ $json.client_name }}"
+            },
+            {
+              "id": "a4",
+              "name": "waba_id",
+              "type": "string",
+              "value": "={{ $json.waba_id }}"
+            },
+            {
+              "id": "a5",
+              "name": "phone_number_id",
+              "type": "string",
+              "value": "={{ $json.phone_number_id }}"
+            },
+            {
+              "id": "a6",
+              "name": "code",
+              "type": "string",
+              "value": "={{ $json.code }}"
+            }
+          ]
+        },
+        "includeOtherFields": false
+      },
+      "notes": "Aquí se almacenan los IDs que llegan cuando termina el onboarding, y también se registra el nombre del cliente el cual viene como parámetro de la URL del navegador"
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Extraer IDs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extraer IDs": {
+      "main": [
+        [
+          {
+            "node": "Almacenar IDs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "staticData": null,
+  "meta": null,
+  "pinData": null,
+  "versionId": "d0dae664-24dd-4499-8ba2-b27203cb3cef",
+  "activeVersionId": "d0dae664-24dd-4499-8ba2-b27203cb3cef",
+  "triggerCount": 1,
+  "shared": [
+    {
+      "updatedAt": "2026-04-06T10:08:16.725Z",
+      "createdAt": "2026-04-06T10:08:16.725Z",
+      "role": "workflow:owner",
+      "workflowId": "vF3bMbCzFz3D2W9z",
+      "projectId": "FDln7onnPuCnwaFe"
+    }
+  ],
+  "activeVersion": {
+    "updatedAt": "2026-04-06T19:50:49.033Z",
+    "createdAt": "2026-04-06T10:08:16.734Z",
+    "versionId": "d0dae664-24dd-4499-8ba2-b27203cb3cef",
+    "workflowId": "vF3bMbCzFz3D2W9z",
+    "nodes": [
+      {
+        "id": "webhook-onboarding",
+        "name": "Webhook",
+        "type": "n8n-nodes-base.webhook",
+        "typeVersion": 2.1,
+        "position": [
+          260,
+          300
+        ],
+        "parameters": {
+          "httpMethod": "POST",
+          "path": "meta-onboarding-finish",
+          "responseMode": "lastNode",
+          "responseData": "firstEntryJson"
+        },
+        "notes": "Recibe el POST de Meta cuando el cliente termina el embedded signup. El nombre del cliente viene como query param: ?client=NombreCliente"
+      },
+      {
+        "id": "code-extract",
+        "name": "Extraer IDs",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          500,
+          300
+        ],
+        "parameters": {
+          "language": "javaScript",
+          "mode": "runOnceForAllItems",
+          "jsCode": "// Extraer datos del embedded signup de Meta\nconst body = items[0].json.body || items[0].json;\nconst query = items[0].json.query || {};\n\n// El nombre del cliente viene como param de URL\nconst clientName = query.client || 'sin-nombre';\n\n// Meta envía estos datos en el callback del embedded signup\nconst wabaId = body.waba_id || body.currentWABAID || '';\nconst phoneId = body.phone_number_id || body.currentPhoneID || '';\nconst code = body.code || '';\n\nreturn [{\n  json: {\n    client_name: clientName,\n    waba_id: wabaId,\n    phone_number_id: phoneId,\n    code: code,\n    timestamp: new Date().toISOString(),\n    status: 'onboarding_complete'\n  }\n}];"
+        },
+        "notes": "Extrae WABA ID, Phone Number ID y el code temporal del body. El nombre del cliente viene del query param ?client=X"
+      },
+      {
+        "id": "set-response",
+        "name": "Almacenar IDs",
+        "type": "n8n-nodes-base.set",
+        "typeVersion": 3.4,
+        "position": [
+          740,
+          300
+        ],
+        "parameters": {
+          "mode": "manual",
+          "assignments": {
+            "assignments": [
+              {
+                "id": "a1",
+                "name": "status",
+                "type": "string",
+                "value": "ok"
+              },
+              {
+                "id": "a2",
+                "name": "message",
+                "type": "string",
+                "value": "={{ 'Onboarding registrado para ' + $json.client_name }}"
+              },
+              {
+                "id": "a3",
+                "name": "client_name",
+                "type": "string",
+                "value": "={{ $json.client_name }}"
+              },
+              {
+                "id": "a4",
+                "name": "waba_id",
+                "type": "string",
+                "value": "={{ $json.waba_id }}"
+              },
+              {
+                "id": "a5",
+                "name": "phone_number_id",
+                "type": "string",
+                "value": "={{ $json.phone_number_id }}"
+              },
+              {
+                "id": "a6",
+                "name": "code",
+                "type": "string",
+                "value": "={{ $json.code }}"
+              }
+            ]
+          },
+          "includeOtherFields": false
+        },
+        "notes": "Aquí se almacenan los IDs que llegan cuando termina el onboarding, y también se registra el nombre del cliente el cual viene como parámetro de la URL del navegador"
+      }
+    ],
+    "connections": {
+      "Webhook": {
+        "main": [
+          [
+            {
+              "node": "Extraer IDs",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Extraer IDs": {
+        "main": [
+          [
+            {
+              "node": "Almacenar IDs",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "authors": "Arnaldo Ayala",
+    "name": "Version d0dae664",
+    "description": "",
+    "autosaved": false
+  },
+  "tags": [
+    {
+      "id": "sin-tag",
+      "name": "sin-tag"
+    }
+  ]
+}
