@@ -1,0 +1,245 @@
+{
+  "updatedAt": "2026-04-06T19:58:17.199Z",
+  "createdAt": "2026-04-06T10:10:10.756Z",
+  "id": "Sc2DO2ernl4MnkqA",
+  "name": "5. Overrides",
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "id": "trigger-manual",
+      "name": "When clicking 'Execute workflow'",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        260,
+        300
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "set-datos",
+      "name": "Set Datos",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        480,
+        300
+      ],
+      "parameters": {
+        "mode": "manual",
+        "assignments": {
+          "assignments": [
+            {
+              "id": "d1",
+              "name": "client_name",
+              "type": "string",
+              "value": "NOMBRE_DEL_CLIENTE"
+            },
+            {
+              "id": "d2",
+              "name": "override_callback_url",
+              "type": "string",
+              "value": "URL_WEBHOOK_INSTANCIA_CLIENTE"
+            },
+            {
+              "id": "d3",
+              "name": "verify_token",
+              "type": "string",
+              "value": "TOKEN_VERIFICACION_CLIENTE"
+            }
+          ]
+        },
+        "includeOtherFields": false
+      },
+      "notes": "Ingresar manualmente estos datos"
+    },
+    {
+      "id": "http-get-info",
+      "name": "Obtener Informacion",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        700,
+        300
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "=https://graph.facebook.com/v21.0/{{ $env.META_APP_ID }}/subscriptions",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "notes": "Se obtiene los ids para ese cliente"
+    },
+    {
+      "id": "http-subscribe-waba",
+      "name": "De una WABA",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        940,
+        200
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "=https://graph.facebook.com/v21.0/{{ $json.waba_id }}/subscribed_apps",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"override_callback_uri\": \"{{ $('Set Datos').item.json.override_callback_url }}\",\n  \"verify_token\": \"{{ $('Set Datos').item.json.verify_token }}\"\n}",
+        "options": {}
+      },
+      "notes": "Aquí se suscribe el waba o teléfono especifico al nuevo webhook"
+    },
+    {
+      "id": "http-subscribe-phone",
+      "name": "De un telefono",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        940,
+        420
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "=https://graph.facebook.com/v21.0/{{ $json.phone_number_id }}/whatsapp_business_profile",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"override_callback_uri\": \"{{ $('Set Datos').item.json.override_callback_url }}\",\n  \"verify_token\": \"{{ $('Set Datos').item.json.verify_token }}\"\n}",
+        "options": {}
+      },
+      "notes": "Esto solo aplica cuando NO usamos coexistence con una app de whatsapp business existente"
+    },
+    {
+      "id": "set-log",
+      "name": "Actualizar Override Callback",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1180,
+        200
+      ],
+      "parameters": {
+        "mode": "manual",
+        "assignments": {
+          "assignments": [
+            {
+              "id": "ol1",
+              "name": "status",
+              "type": "string",
+              "value": "override_complete"
+            },
+            {
+              "id": "ol2",
+              "name": "client_name",
+              "type": "string",
+              "value": "={{ $('Set Datos').item.json.client_name }}"
+            },
+            {
+              "id": "ol3",
+              "name": "callback_url",
+              "type": "string",
+              "value": "={{ $('Set Datos').item.json.override_callback_url }}"
+            },
+            {
+              "id": "ol4",
+              "name": "timestamp",
+              "type": "string",
+              "value": "={{ new Date().toISOString() }}"
+            }
+          ]
+        },
+        "includeOtherFields": false
+      },
+      "notes": "Aquí únicamente se registra la nueva url del nuevo webhook"
+    }
+  ],
+  "connections": {
+    "When clicking 'Execute workflow'": {
+      "main": [
+        [
+          {
+            "node": "Set Datos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Datos": {
+      "main": [
+        [
+          {
+            "node": "Obtener Informacion",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Obtener Informacion": {
+      "main": [
+        [
+          {
+            "node": "De una WABA",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "De un telefono",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "De una WABA": {
+      "main": [
+        [
+          {
+            "node": "Actualizar Override Callback",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "staticData": null,
+  "meta": null,
+  "pinData": null,
+  "versionId": "3e8a17c3-0d1f-4420-b205-900ebbd818d7",
+  "activeVersionId": null,
+  "triggerCount": 0,
+  "shared": [
+    {
+      "updatedAt": "2026-04-06T10:10:10.756Z",
+      "createdAt": "2026-04-06T10:10:10.756Z",
+      "role": "workflow:owner",
+      "workflowId": "Sc2DO2ernl4MnkqA",
+      "projectId": "FDln7onnPuCnwaFe"
+    }
+  ],
+  "activeVersion": null,
+  "tags": [
+    {
+      "id": "sin-tag",
+      "name": "sin-tag"
+    }
+  ]
+}
