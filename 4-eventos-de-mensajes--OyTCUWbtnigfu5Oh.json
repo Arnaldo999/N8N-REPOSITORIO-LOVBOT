@@ -1,0 +1,796 @@
+{
+  "updatedAt": "2026-04-06T22:07:25.995Z",
+  "createdAt": "2026-04-06T10:09:48.572Z",
+  "id": "OyTCUWbtnigfu5Oh",
+  "name": "4. Eventos de mensajes",
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "id": "webhook-get",
+      "name": "Get Hub Challenge",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        260,
+        200
+      ],
+      "parameters": {
+        "httpMethod": "GET",
+        "path": "meta-verify",
+        "responseMode": "lastNode",
+        "responseData": "firstEntryJson"
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "if-verify",
+      "name": "Verificar Token",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        500,
+        200
+      ],
+      "parameters": {
+        "conditions": {
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "v1",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              },
+              "leftValue": "={{ $json.query['hub.verify_token'] }}",
+              "rightValue": "={{ $env.LOVBOT_META_VERIFY_TOKEN }}"
+            }
+          ],
+          "options": {
+            "version": 2,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          }
+        }
+      }
+    },
+    {
+      "id": "respond-200",
+      "name": "200 - Verificado",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        740,
+        100
+      ],
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "={{ $json.query['hub.challenge'] }}"
+      }
+    },
+    {
+      "id": "respond-403",
+      "name": "403 - Error",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        740,
+        300
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\"error\": \"Token invalido\"}",
+        "options": {
+          "responseCode": 403
+        }
+      }
+    },
+    {
+      "id": "webhook-post",
+      "name": "Post Notifications",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        260,
+        600
+      ],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "meta-events",
+        "responseMode": "responseNode"
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "respond-ok",
+      "name": "200 - Recibido",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        500,
+        600
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\"status\": \"received\"}"
+      }
+    },
+    {
+      "id": "code-extract",
+      "name": "Extraer Datos Mensaje",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        500,
+        800
+      ],
+      "parameters": {
+        "language": "javaScript",
+        "mode": "runOnceForAllItems",
+        "jsCode": "const body = items[0].json.body || items[0].json;\nconst entry = (body.entry || [])[0] || {};\nconst changes = (entry.changes || [])[0] || {};\nconst value = changes.value || {};\nconst phoneNumberId = value.metadata?.phone_number_id || '';\nconst displayPhone = value.metadata?.display_phone_number || '';\nconst messages = value.messages || [];\nconst msg = messages[0] || null;\nconst statuses = value.statuses || [];\nconst result = {\n  phone_number_id: phoneNumberId,\n  display_phone: displayPhone,\n  has_message: messages.length > 0,\n  has_status: statuses.length > 0,\n  event_type: messages.length > 0 ? 'message' : (statuses.length > 0 ? 'status' : 'other')\n};\nif (msg) {\n  result.from = msg.from || '';\n  result.message_type = msg.type || '';\n  result.text = msg.text?.body || '';\n  result.timestamp = msg.timestamp || '';\n  result.message_id = msg.id || '';\n}\nreturn [{ json: result }];"
+      }
+    },
+    {
+      "id": "if-message",
+      "name": "Es un mensaje?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        740,
+        800
+      ],
+      "parameters": {
+        "conditions": {
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "m1",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              },
+              "leftValue": "={{ $json.has_message }}",
+              "rightValue": ""
+            }
+          ],
+          "options": {
+            "version": 2,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          }
+        }
+      }
+    },
+    {
+      "id": "code-router",
+      "name": "Router por Cliente",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        980,
+        700
+      ],
+      "parameters": {
+        "language": "javaScript",
+        "mode": "runOnceForAllItems",
+        "jsCode": "const CLIENTES = {\n  // 'PHONE_NUMBER_ID': {\n  //   nombre: 'Nombre del cliente',\n  //   worker_url: 'https://agentes.lovbot.ai/clientes/robert/cliente/whatsapp'\n  // },\n};\n\nconst phoneId = items[0].json.phone_number_id;\nconst cliente = CLIENTES[phoneId];\n\nif (!cliente) {\n  return [{\n    json: {\n      ...items[0].json,\n      route: 'unknown',\n      worker_url: '',\n      client_name: 'NO REGISTRADO — phone_id: ' + phoneId\n    }\n  }];\n}\n\nreturn [{\n  json: {\n    ...items[0].json,\n    route: 'fastapi',\n    worker_url: cliente.worker_url,\n    client_name: cliente.nombre\n  }\n}];"
+      }
+    },
+    {
+      "id": "if-known",
+      "name": "Cliente registrado?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1220,
+        700
+      ],
+      "parameters": {
+        "conditions": {
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "k1",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              },
+              "leftValue": "={{ $json.route }}",
+              "rightValue": "unknown"
+            }
+          ],
+          "options": {
+            "version": 2,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          }
+        }
+      }
+    },
+    {
+      "id": "http-worker",
+      "name": "Enviar a Worker FastAPI",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1460,
+        600
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.worker_url }}",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"from\": \"{{ $json.from }}\",\n  \"text\": \"{{ $json.text }}\",\n  \"phone_number_id\": \"{{ $json.phone_number_id }}\",\n  \"message_type\": \"{{ $json.message_type }}\",\n  \"message_id\": \"{{ $json.message_id }}\",\n  \"timestamp\": \"{{ $json.timestamp }}\",\n  \"client_name\": \"{{ $json.client_name }}\"\n}",
+        "options": {}
+      }
+    },
+    {
+      "id": "set-unknown",
+      "name": "Log Cliente Desconocido",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1460,
+        850
+      ],
+      "parameters": {
+        "mode": "manual",
+        "assignments": {
+          "assignments": [
+            {
+              "id": "u1",
+              "name": "warning",
+              "type": "string",
+              "value": "Mensaje de phone_id no registrado"
+            },
+            {
+              "id": "u2",
+              "name": "phone_number_id",
+              "type": "string",
+              "value": "={{ $json.phone_number_id }}"
+            },
+            {
+              "id": "u3",
+              "name": "from",
+              "type": "string",
+              "value": "={{ $json.from }}"
+            },
+            {
+              "id": "u4",
+              "name": "text",
+              "type": "string",
+              "value": "={{ $json.text }}"
+            },
+            {
+              "id": "u5",
+              "name": "timestamp",
+              "type": "string",
+              "value": "={{ new Date().toISOString() }}"
+            }
+          ]
+        },
+        "includeOtherFields": false
+      }
+    }
+  ],
+  "connections": {
+    "Get Hub Challenge": {
+      "main": [
+        [
+          {
+            "node": "Verificar Token",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verificar Token": {
+      "main": [
+        [
+          {
+            "node": "200 - Verificado",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "403 - Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Post Notifications": {
+      "main": [
+        [
+          {
+            "node": "200 - Recibido",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Extraer Datos Mensaje",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extraer Datos Mensaje": {
+      "main": [
+        [
+          {
+            "node": "Es un mensaje?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Es un mensaje?": {
+      "main": [
+        [
+          {
+            "node": "Router por Cliente",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Router por Cliente": {
+      "main": [
+        [
+          {
+            "node": "Cliente registrado?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cliente registrado?": {
+      "main": [
+        [
+          {
+            "node": "Enviar a Worker FastAPI",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Log Cliente Desconocido",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "staticData": null,
+  "meta": null,
+  "pinData": null,
+  "versionId": "4b39f547-1d86-4065-a8a0-380a32053684",
+  "activeVersionId": "4b39f547-1d86-4065-a8a0-380a32053684",
+  "triggerCount": 2,
+  "shared": [
+    {
+      "updatedAt": "2026-04-06T10:09:48.572Z",
+      "createdAt": "2026-04-06T10:09:48.572Z",
+      "role": "workflow:owner",
+      "workflowId": "OyTCUWbtnigfu5Oh",
+      "projectId": "FDln7onnPuCnwaFe"
+    }
+  ],
+  "activeVersion": {
+    "updatedAt": "2026-04-06T22:07:25.998Z",
+    "createdAt": "2026-04-06T22:07:25.998Z",
+    "versionId": "4b39f547-1d86-4065-a8a0-380a32053684",
+    "workflowId": "OyTCUWbtnigfu5Oh",
+    "nodes": [
+      {
+        "id": "webhook-get",
+        "name": "Get Hub Challenge",
+        "type": "n8n-nodes-base.webhook",
+        "typeVersion": 2.1,
+        "position": [
+          260,
+          200
+        ],
+        "parameters": {
+          "httpMethod": "GET",
+          "path": "meta-verify",
+          "responseMode": "lastNode",
+          "responseData": "firstEntryJson"
+        },
+        "onError": "continueRegularOutput"
+      },
+      {
+        "id": "if-verify",
+        "name": "Verificar Token",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.3,
+        "position": [
+          500,
+          200
+        ],
+        "parameters": {
+          "conditions": {
+            "combinator": "and",
+            "conditions": [
+              {
+                "id": "v1",
+                "operator": {
+                  "type": "string",
+                  "operation": "equals"
+                },
+                "leftValue": "={{ $json.query['hub.verify_token'] }}",
+                "rightValue": "={{ $env.LOVBOT_META_VERIFY_TOKEN }}"
+              }
+            ],
+            "options": {
+              "version": 2,
+              "leftValue": "",
+              "caseSensitive": true,
+              "typeValidation": "strict"
+            }
+          }
+        }
+      },
+      {
+        "id": "respond-200",
+        "name": "200 - Verificado",
+        "type": "n8n-nodes-base.respondToWebhook",
+        "typeVersion": 1.5,
+        "position": [
+          740,
+          100
+        ],
+        "parameters": {
+          "respondWith": "text",
+          "responseBody": "={{ $json.query['hub.challenge'] }}"
+        }
+      },
+      {
+        "id": "respond-403",
+        "name": "403 - Error",
+        "type": "n8n-nodes-base.respondToWebhook",
+        "typeVersion": 1.5,
+        "position": [
+          740,
+          300
+        ],
+        "parameters": {
+          "respondWith": "json",
+          "responseBody": "={\"error\": \"Token invalido\"}",
+          "options": {
+            "responseCode": 403
+          }
+        }
+      },
+      {
+        "id": "webhook-post",
+        "name": "Post Notifications",
+        "type": "n8n-nodes-base.webhook",
+        "typeVersion": 2.1,
+        "position": [
+          260,
+          600
+        ],
+        "parameters": {
+          "httpMethod": "POST",
+          "path": "meta-events",
+          "responseMode": "responseNode"
+        },
+        "onError": "continueRegularOutput"
+      },
+      {
+        "id": "respond-ok",
+        "name": "200 - Recibido",
+        "type": "n8n-nodes-base.respondToWebhook",
+        "typeVersion": 1.5,
+        "position": [
+          500,
+          600
+        ],
+        "parameters": {
+          "respondWith": "json",
+          "responseBody": "={\"status\": \"received\"}"
+        }
+      },
+      {
+        "id": "code-extract",
+        "name": "Extraer Datos Mensaje",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          500,
+          800
+        ],
+        "parameters": {
+          "language": "javaScript",
+          "mode": "runOnceForAllItems",
+          "jsCode": "const body = items[0].json.body || items[0].json;\nconst entry = (body.entry || [])[0] || {};\nconst changes = (entry.changes || [])[0] || {};\nconst value = changes.value || {};\nconst phoneNumberId = value.metadata?.phone_number_id || '';\nconst displayPhone = value.metadata?.display_phone_number || '';\nconst messages = value.messages || [];\nconst msg = messages[0] || null;\nconst statuses = value.statuses || [];\nconst result = {\n  phone_number_id: phoneNumberId,\n  display_phone: displayPhone,\n  has_message: messages.length > 0,\n  has_status: statuses.length > 0,\n  event_type: messages.length > 0 ? 'message' : (statuses.length > 0 ? 'status' : 'other')\n};\nif (msg) {\n  result.from = msg.from || '';\n  result.message_type = msg.type || '';\n  result.text = msg.text?.body || '';\n  result.timestamp = msg.timestamp || '';\n  result.message_id = msg.id || '';\n}\nreturn [{ json: result }];"
+        }
+      },
+      {
+        "id": "if-message",
+        "name": "Es un mensaje?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.3,
+        "position": [
+          740,
+          800
+        ],
+        "parameters": {
+          "conditions": {
+            "combinator": "and",
+            "conditions": [
+              {
+                "id": "m1",
+                "operator": {
+                  "type": "boolean",
+                  "operation": "true",
+                  "singleValue": true
+                },
+                "leftValue": "={{ $json.has_message }}",
+                "rightValue": ""
+              }
+            ],
+            "options": {
+              "version": 2,
+              "leftValue": "",
+              "caseSensitive": true,
+              "typeValidation": "strict"
+            }
+          }
+        }
+      },
+      {
+        "id": "code-router",
+        "name": "Router por Cliente",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          980,
+          700
+        ],
+        "parameters": {
+          "language": "javaScript",
+          "mode": "runOnceForAllItems",
+          "jsCode": "const CLIENTES = {\n  // 'PHONE_NUMBER_ID': {\n  //   nombre: 'Nombre del cliente',\n  //   worker_url: 'https://agentes.lovbot.ai/clientes/robert/cliente/whatsapp'\n  // },\n};\n\nconst phoneId = items[0].json.phone_number_id;\nconst cliente = CLIENTES[phoneId];\n\nif (!cliente) {\n  return [{\n    json: {\n      ...items[0].json,\n      route: 'unknown',\n      worker_url: '',\n      client_name: 'NO REGISTRADO — phone_id: ' + phoneId\n    }\n  }];\n}\n\nreturn [{\n  json: {\n    ...items[0].json,\n    route: 'fastapi',\n    worker_url: cliente.worker_url,\n    client_name: cliente.nombre\n  }\n}];"
+        }
+      },
+      {
+        "id": "if-known",
+        "name": "Cliente registrado?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.3,
+        "position": [
+          1220,
+          700
+        ],
+        "parameters": {
+          "conditions": {
+            "combinator": "and",
+            "conditions": [
+              {
+                "id": "k1",
+                "operator": {
+                  "type": "string",
+                  "operation": "notEquals"
+                },
+                "leftValue": "={{ $json.route }}",
+                "rightValue": "unknown"
+              }
+            ],
+            "options": {
+              "version": 2,
+              "leftValue": "",
+              "caseSensitive": true,
+              "typeValidation": "strict"
+            }
+          }
+        }
+      },
+      {
+        "id": "http-worker",
+        "name": "Enviar a Worker FastAPI",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "position": [
+          1460,
+          600
+        ],
+        "parameters": {
+          "method": "POST",
+          "url": "={{ $json.worker_url }}",
+          "sendBody": true,
+          "contentType": "json",
+          "specifyBody": "json",
+          "jsonBody": "={\n  \"from\": \"{{ $json.from }}\",\n  \"text\": \"{{ $json.text }}\",\n  \"phone_number_id\": \"{{ $json.phone_number_id }}\",\n  \"message_type\": \"{{ $json.message_type }}\",\n  \"message_id\": \"{{ $json.message_id }}\",\n  \"timestamp\": \"{{ $json.timestamp }}\",\n  \"client_name\": \"{{ $json.client_name }}\"\n}",
+          "options": {}
+        }
+      },
+      {
+        "id": "set-unknown",
+        "name": "Log Cliente Desconocido",
+        "type": "n8n-nodes-base.set",
+        "typeVersion": 3.4,
+        "position": [
+          1460,
+          850
+        ],
+        "parameters": {
+          "mode": "manual",
+          "assignments": {
+            "assignments": [
+              {
+                "id": "u1",
+                "name": "warning",
+                "type": "string",
+                "value": "Mensaje de phone_id no registrado"
+              },
+              {
+                "id": "u2",
+                "name": "phone_number_id",
+                "type": "string",
+                "value": "={{ $json.phone_number_id }}"
+              },
+              {
+                "id": "u3",
+                "name": "from",
+                "type": "string",
+                "value": "={{ $json.from }}"
+              },
+              {
+                "id": "u4",
+                "name": "text",
+                "type": "string",
+                "value": "={{ $json.text }}"
+              },
+              {
+                "id": "u5",
+                "name": "timestamp",
+                "type": "string",
+                "value": "={{ new Date().toISOString() }}"
+              }
+            ]
+          },
+          "includeOtherFields": false
+        }
+      }
+    ],
+    "connections": {
+      "Get Hub Challenge": {
+        "main": [
+          [
+            {
+              "node": "Verificar Token",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Verificar Token": {
+        "main": [
+          [
+            {
+              "node": "200 - Verificado",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "403 - Error",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Post Notifications": {
+        "main": [
+          [
+            {
+              "node": "200 - Recibido",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Extraer Datos Mensaje",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Extraer Datos Mensaje": {
+        "main": [
+          [
+            {
+              "node": "Es un mensaje?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Es un mensaje?": {
+        "main": [
+          [
+            {
+              "node": "Router por Cliente",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          []
+        ]
+      },
+      "Router por Cliente": {
+        "main": [
+          [
+            {
+              "node": "Cliente registrado?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Cliente registrado?": {
+        "main": [
+          [
+            {
+              "node": "Enviar a Worker FastAPI",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Log Cliente Desconocido",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "authors": "Arnaldo Ayala",
+    "name": null,
+    "description": null,
+    "autosaved": false
+  },
+  "tags": [
+    {
+      "id": "sin-tag",
+      "name": "sin-tag"
+    }
+  ]
+}
