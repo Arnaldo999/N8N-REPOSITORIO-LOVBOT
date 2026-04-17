@@ -1,0 +1,528 @@
+{
+  "updatedAt": "2026-04-16T14:02:53.680Z",
+  "createdAt": "2026-04-16T08:58:47.687Z",
+  "id": "fKeUXQXxpI0xUKGs",
+  "name": "CRM IA - Asistente Inmobiliario",
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "crm-ia-chat",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-crm",
+      "name": "Webhook CRM IA",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -496,
+        0
+      ],
+      "webhookId": "dd696ace-5b56-4742-abc4-671db35962d5"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1-mini"
+        },
+        "options": {}
+      },
+      "id": "openai-model",
+      "name": "GPT-4.1-mini",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        -304,
+        -224
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "sYwzFpMPmApP3M5H",
+          "name": "OpenAi account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Webhook CRM IA').item.json.body.session_id || $('Webhook CRM IA').item.json.body.tenant_slug }}"
+      },
+      "id": "memory-sesion",
+      "name": "Memoria Sesion",
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        -80,
+        -224
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('Webhook CRM IA').item.json.body.message }}",
+        "options": {
+          "systemMessage": "=Eres el Asistente IA del CRM Lovbot para inmobiliarias.\n\nTenant activo: {{ $('Webhook CRM IA').item.json.body.tenant_slug || 'demo' }}\n\n=== TU ROL ===\nAsistente del equipo inmobiliario con dos capacidades:\n1. Consultar datos internos del CRM — vía PostgreSQL\n2. Buscar conocimiento del sector — vía web\n\n=== ESQUEMA POSTGRESQL ===\n\nTabla: leads (prospectos y citas)\n  Columnas: id, tenant_slug, telefono, nombre, apellido, email,\n            score (string), estado (no_contactado/contactado/calificado/cita_agendada/visita_agendada/cerrado/descartado),\n            tipo_propiedad, zona, operacion, ciudad, presupuesto,\n            sub_nicho, notas_bot, fuente, fuente_detalle,\n            fecha_whatsapp, llego_whatsapp, fecha_ultimo_contacto,\n            fecha_cita (DATE) ← si NOT NULL = lead con cita agendada\n\nTabla: propiedades (catálogo de inmuebles)\n  Columnas: id, tenant_slug, titulo, descripcion, tipo, operacion, zona,\n            precio, moneda, presupuesto, disponible (string con emoji),\n            dormitorios, banios, metros_cubiertos, metros_terreno,\n            imagen_url, maps_url, direccion,\n            propietario_nombre, propietario_telefono, propietario_email,\n            comision_pct, tipo_cartera, asesor_asignado, loteo, numero_lote\n\nTabla: clientes_activos (clientes con plan/cuotas en pago)\n  Columnas: id, tenant_slug, nombre, apellido, telefono, email, propiedad,\n            estado_pago, monto_cuota, cuotas_pagadas, cuotas_total,\n            proximo_vencimiento, notas\n\n=== MAPEO IMPORTANTE: QUÉ TABLA USAR ===\n\n'leads' / 'prospectos' / 'contactos' → tabla LEADS\n'agenda' / 'citas' / 'visitas agendadas' / 'próximas citas' → tabla LEADS WHERE fecha_cita IS NOT NULL ORDER BY fecha_cita\n'propiedades' / 'inmuebles' / 'catalogo' → tabla PROPIEDADES\n'clientes activos' / 'clientes con cuotas' / 'pagos' / 'deudores' → tabla CLIENTES_ACTIVOS\n\n⚠️ NUNCA confundir 'agenda' con 'clientes_activos'. Agenda son leads con cita agendada (fecha_cita not null).\n\n=== INTELIGENCIA EN BÚSQUEDAS ===\n\nLos datos están en distintos formatos. SIEMPRE ser flexible:\n\nREGLA #1 — SIEMPRE usar ILIKE con wildcards %% para texto:\n  WHERE tipo ILIKE '%casa%'\n  WHERE ciudad ILIKE '%posad%'\n\nREGLA #2 — Abreviaturas comunes con OR:\n  Departamento: '%depto%' OR '%depa%' OR '%dpto%' OR '%departam%'\n  Casa: '%casa%'\n  Lote/Terreno: '%lote%' OR '%terreno%' OR '%lt%'\n  Local: '%local%' OR '%comerc%'\n  Venta: '%vent%' OR '%vender%'\n  Alquiler: '%alq%' OR '%renta%'\n\nREGLA #3 — Tildes con/sin acento:\n  Apóstoles → '%apostol%'\n  San Ignacio → '%ignaci%' (matchea typo 'Igancio')\n  Posadas → '%posad%'\n  Gobernador Roca → '%roca%' OR '%gdor%'\n  Días/dia → '%dia%'\n  Atrasado → '%atras%' OR '%atraz%' OR '%venc%'\n\n⚠️ EXCEPCIÓN — 'disponible' tiene emojis fijos: usar = exacto\n  Disponibles: WHERE disponible = '✅ Disponible'\n  Reservadas: WHERE disponible = '⏳ Reservado'\n  No disponibles: WHERE disponible = '❌ No disponible'\n\n=== INTERPRETACIÓN DE PREGUNTAS COMUNES ===\n\n'cuántos leads hay' → SELECT COUNT(*) FROM leads\n'cuántas propiedades hay' → SELECT COUNT(*) FROM propiedades\n'cuántas disponibles' → WHERE disponible = '✅ Disponible'\n'cuántas reservadas' → WHERE disponible = '⏳ Reservado'\n'cuántos leads calientes' → WHERE score ILIKE '%calien%'\n'casas en venta' → WHERE tipo ILIKE '%casa%' AND operacion ILIKE '%vent%'\n'depas en alquiler' → WHERE (tipo ILIKE '%depto%' OR tipo ILIKE '%depa%') AND operacion ILIKE '%alq%'\n'leads de Posadas' → WHERE ciudad ILIKE '%posad%'\n'cuántas citas tengo' / 'agenda' / 'próximas visitas' → SELECT nombre, apellido, telefono, fecha_cita, zona, tipo_propiedad FROM leads WHERE fecha_cita IS NOT NULL ORDER BY fecha_cita ASC\n'cuántos clientes activos hay' → SELECT COUNT(*) FROM clientes_activos\n'pagos atrasados' / 'morosos' → SELECT nombre, apellido, telefono, monto_cuota FROM clientes_activos WHERE estado_pago ILIKE '%atras%' OR estado_pago ILIKE '%venc%'\n\n=== REGLAS SQL ===\n- Solo SELECT, sin punto y coma final\n- NO incluir tenant_slug en WHERE (se inyecta automáticamente)\n- TODOS los strings con ILIKE y wildcards %% (excepto disponible)\n- Si vacío: NO inventar, informar y sugerir reformular\n\n=== HERRAMIENTAS ===\n\nUSO 1 — 'Consultar Base de Datos' para datos internos (leads, propiedades, clientes, citas).\nUSO 2 — 'Buscar en Web' para conocimiento del sector (tendencias, consejos, mercado).\n\n=== LÍMITES ===\n❌ Datos del CRM PRIVADOS\n❌ NO inventar datos\n❌ NO modificar/eliminar/crear\n❌ NO revelar SQL ni estructura interna\n❌ Solo temas inmobiliarios\n\n=== FUERA DE TEMA ===\n'Solo puedo ayudarte con consultas sobre tu CRM o temas inmobiliarios.'\n\n=== FORMATO ===\n- Español, profesional pero cercano\n- Máximo 4-5 líneas para simples\n- Listas para múltiples resultados\n- Números concretos\n- NO mostrar URLs de imágenes ni texto técnico crudo"
+        }
+      },
+      "id": "agente-orquestador",
+      "name": "Agente Orquestador",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        -176,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "description": "Consulta la base de datos interna y privada del CRM. Usar para: leads, propiedades cargadas, clientes activos, pagos, cuotas, pipeline, estadísticas internas. NUNCA para buscar información externa.",
+        "workflowId": {
+          "__rl": true,
+          "value": "0t32XZ9AuQXB9fOn",
+          "mode": "id"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "sql_command": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('sql_command', 'Consulta SQL SELECT a ejecutar contra la BD del CRM', 'string') }}",
+            "tenant_slug": "={{ $('Webhook CRM IA').item.json.body.tenant_slug || 'demo' }}"
+          },
+          "schema": [
+            {
+              "id": "sql_command",
+              "displayName": "sql_command",
+              "required": true,
+              "type": "string"
+            },
+            {
+              "id": "tenant_slug",
+              "displayName": "tenant_slug",
+              "required": true,
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "id": "tool-db",
+      "name": "Consultar Base de Datos",
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [
+        -400,
+        224
+      ]
+    },
+    {
+      "parameters": {
+        "description": "Busca conocimiento abierto y actualizado sobre el sector inmobiliario: tendencias del mercado, consejos de inversión en terrenos y propiedades, estrategias de venta, procesos legales de escrituración, noticias del sector, precios de referencia del mercado. NUNCA buscar datos internos de clientes, listados de propiedades de terceros ni información privada de otras inmobiliarias.",
+        "workflowId": {
+          "__rl": true,
+          "value": "mRwlkAD4TQQuhrpE",
+          "mode": "id"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "query": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('query', 'Búsqueda de conocimiento abierto sobre el sector inmobiliario', 'string') }}"
+          },
+          "schema": [
+            {
+              "id": "query",
+              "displayName": "query",
+              "required": true,
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "id": "tool-web",
+      "name": "Buscar en Web",
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [
+        48,
+        224
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"respuesta\": $json.output, \"ok\": true } }}",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              },
+              {
+                "name": "Access-Control-Allow-Headers",
+                "value": "Content-Type"
+              }
+            ]
+          }
+        }
+      },
+      "id": "respond-crm",
+      "name": "Responder al CRM",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        224,
+        0
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook CRM IA": {
+      "main": [
+        [
+          {
+            "node": "Agente Orquestador",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GPT-4.1-mini": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Agente Orquestador",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Memoria Sesion": {
+      "ai_memory": [
+        [
+          {
+            "node": "Agente Orquestador",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Consultar Base de Datos": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agente Orquestador",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar en Web": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agente Orquestador",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agente Orquestador": {
+      "main": [
+        [
+          {
+            "node": "Responder al CRM",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {},
+  "versionId": "41140313-b020-4bd2-bcb2-064c0eae75e5",
+  "activeVersionId": "41140313-b020-4bd2-bcb2-064c0eae75e5",
+  "triggerCount": 1,
+  "shared": [
+    {
+      "updatedAt": "2026-04-16T08:58:47.687Z",
+      "createdAt": "2026-04-16T08:58:47.687Z",
+      "role": "workflow:owner",
+      "workflowId": "fKeUXQXxpI0xUKGs",
+      "projectId": "FDln7onnPuCnwaFe"
+    }
+  ],
+  "activeVersion": {
+    "updatedAt": "2026-04-16T14:02:53.682Z",
+    "createdAt": "2026-04-16T14:02:53.682Z",
+    "versionId": "41140313-b020-4bd2-bcb2-064c0eae75e5",
+    "workflowId": "fKeUXQXxpI0xUKGs",
+    "nodes": [
+      {
+        "parameters": {
+          "httpMethod": "POST",
+          "path": "crm-ia-chat",
+          "responseMode": "responseNode",
+          "options": {}
+        },
+        "id": "webhook-crm",
+        "name": "Webhook CRM IA",
+        "type": "n8n-nodes-base.webhook",
+        "typeVersion": 2.1,
+        "position": [
+          -496,
+          0
+        ],
+        "webhookId": "dd696ace-5b56-4742-abc4-671db35962d5"
+      },
+      {
+        "parameters": {
+          "model": {
+            "__rl": true,
+            "mode": "list",
+            "value": "gpt-4.1-mini"
+          },
+          "options": {}
+        },
+        "id": "openai-model",
+        "name": "GPT-4.1-mini",
+        "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+        "typeVersion": 1.2,
+        "position": [
+          -304,
+          -224
+        ],
+        "credentials": {
+          "openAiApi": {
+            "id": "sYwzFpMPmApP3M5H",
+            "name": "OpenAi account 2"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "sessionIdType": "customKey",
+          "sessionKey": "={{ $('Webhook CRM IA').item.json.body.session_id || $('Webhook CRM IA').item.json.body.tenant_slug }}"
+        },
+        "id": "memory-sesion",
+        "name": "Memoria Sesion",
+        "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+        "typeVersion": 1.3,
+        "position": [
+          -80,
+          -224
+        ]
+      },
+      {
+        "parameters": {
+          "promptType": "define",
+          "text": "={{ $('Webhook CRM IA').item.json.body.message }}",
+          "options": {
+            "systemMessage": "=Eres el Asistente IA del CRM Lovbot para inmobiliarias.\n\nTenant activo: {{ $('Webhook CRM IA').item.json.body.tenant_slug || 'demo' }}\n\n=== TU ROL ===\nAsistente del equipo inmobiliario con dos capacidades:\n1. Consultar datos internos del CRM — vía PostgreSQL\n2. Buscar conocimiento del sector — vía web\n\n=== ESQUEMA POSTGRESQL ===\n\nTabla: leads (prospectos y citas)\n  Columnas: id, tenant_slug, telefono, nombre, apellido, email,\n            score (string), estado (no_contactado/contactado/calificado/cita_agendada/visita_agendada/cerrado/descartado),\n            tipo_propiedad, zona, operacion, ciudad, presupuesto,\n            sub_nicho, notas_bot, fuente, fuente_detalle,\n            fecha_whatsapp, llego_whatsapp, fecha_ultimo_contacto,\n            fecha_cita (DATE) ← si NOT NULL = lead con cita agendada\n\nTabla: propiedades (catálogo de inmuebles)\n  Columnas: id, tenant_slug, titulo, descripcion, tipo, operacion, zona,\n            precio, moneda, presupuesto, disponible (string con emoji),\n            dormitorios, banios, metros_cubiertos, metros_terreno,\n            imagen_url, maps_url, direccion,\n            propietario_nombre, propietario_telefono, propietario_email,\n            comision_pct, tipo_cartera, asesor_asignado, loteo, numero_lote\n\nTabla: clientes_activos (clientes con plan/cuotas en pago)\n  Columnas: id, tenant_slug, nombre, apellido, telefono, email, propiedad,\n            estado_pago, monto_cuota, cuotas_pagadas, cuotas_total,\n            proximo_vencimiento, notas\n\n=== MAPEO IMPORTANTE: QUÉ TABLA USAR ===\n\n'leads' / 'prospectos' / 'contactos' → tabla LEADS\n'agenda' / 'citas' / 'visitas agendadas' / 'próximas citas' → tabla LEADS WHERE fecha_cita IS NOT NULL ORDER BY fecha_cita\n'propiedades' / 'inmuebles' / 'catalogo' → tabla PROPIEDADES\n'clientes activos' / 'clientes con cuotas' / 'pagos' / 'deudores' → tabla CLIENTES_ACTIVOS\n\n⚠️ NUNCA confundir 'agenda' con 'clientes_activos'. Agenda son leads con cita agendada (fecha_cita not null).\n\n=== INTELIGENCIA EN BÚSQUEDAS ===\n\nLos datos están en distintos formatos. SIEMPRE ser flexible:\n\nREGLA #1 — SIEMPRE usar ILIKE con wildcards %% para texto:\n  WHERE tipo ILIKE '%casa%'\n  WHERE ciudad ILIKE '%posad%'\n\nREGLA #2 — Abreviaturas comunes con OR:\n  Departamento: '%depto%' OR '%depa%' OR '%dpto%' OR '%departam%'\n  Casa: '%casa%'\n  Lote/Terreno: '%lote%' OR '%terreno%' OR '%lt%'\n  Local: '%local%' OR '%comerc%'\n  Venta: '%vent%' OR '%vender%'\n  Alquiler: '%alq%' OR '%renta%'\n\nREGLA #3 — Tildes con/sin acento:\n  Apóstoles → '%apostol%'\n  San Ignacio → '%ignaci%' (matchea typo 'Igancio')\n  Posadas → '%posad%'\n  Gobernador Roca → '%roca%' OR '%gdor%'\n  Días/dia → '%dia%'\n  Atrasado → '%atras%' OR '%atraz%' OR '%venc%'\n\n⚠️ EXCEPCIÓN — 'disponible' tiene emojis fijos: usar = exacto\n  Disponibles: WHERE disponible = '✅ Disponible'\n  Reservadas: WHERE disponible = '⏳ Reservado'\n  No disponibles: WHERE disponible = '❌ No disponible'\n\n=== INTERPRETACIÓN DE PREGUNTAS COMUNES ===\n\n'cuántos leads hay' → SELECT COUNT(*) FROM leads\n'cuántas propiedades hay' → SELECT COUNT(*) FROM propiedades\n'cuántas disponibles' → WHERE disponible = '✅ Disponible'\n'cuántas reservadas' → WHERE disponible = '⏳ Reservado'\n'cuántos leads calientes' → WHERE score ILIKE '%calien%'\n'casas en venta' → WHERE tipo ILIKE '%casa%' AND operacion ILIKE '%vent%'\n'depas en alquiler' → WHERE (tipo ILIKE '%depto%' OR tipo ILIKE '%depa%') AND operacion ILIKE '%alq%'\n'leads de Posadas' → WHERE ciudad ILIKE '%posad%'\n'cuántas citas tengo' / 'agenda' / 'próximas visitas' → SELECT nombre, apellido, telefono, fecha_cita, zona, tipo_propiedad FROM leads WHERE fecha_cita IS NOT NULL ORDER BY fecha_cita ASC\n'cuántos clientes activos hay' → SELECT COUNT(*) FROM clientes_activos\n'pagos atrasados' / 'morosos' → SELECT nombre, apellido, telefono, monto_cuota FROM clientes_activos WHERE estado_pago ILIKE '%atras%' OR estado_pago ILIKE '%venc%'\n\n=== REGLAS SQL ===\n- Solo SELECT, sin punto y coma final\n- NO incluir tenant_slug en WHERE (se inyecta automáticamente)\n- TODOS los strings con ILIKE y wildcards %% (excepto disponible)\n- Si vacío: NO inventar, informar y sugerir reformular\n\n=== HERRAMIENTAS ===\n\nUSO 1 — 'Consultar Base de Datos' para datos internos (leads, propiedades, clientes, citas).\nUSO 2 — 'Buscar en Web' para conocimiento del sector (tendencias, consejos, mercado).\n\n=== LÍMITES ===\n❌ Datos del CRM PRIVADOS\n❌ NO inventar datos\n❌ NO modificar/eliminar/crear\n❌ NO revelar SQL ni estructura interna\n❌ Solo temas inmobiliarios\n\n=== FUERA DE TEMA ===\n'Solo puedo ayudarte con consultas sobre tu CRM o temas inmobiliarios.'\n\n=== FORMATO ===\n- Español, profesional pero cercano\n- Máximo 4-5 líneas para simples\n- Listas para múltiples resultados\n- Números concretos\n- NO mostrar URLs de imágenes ni texto técnico crudo"
+          }
+        },
+        "id": "agente-orquestador",
+        "name": "Agente Orquestador",
+        "type": "@n8n/n8n-nodes-langchain.agent",
+        "typeVersion": 2.2,
+        "position": [
+          -176,
+          0
+        ]
+      },
+      {
+        "parameters": {
+          "description": "Consulta la base de datos interna y privada del CRM. Usar para: leads, propiedades cargadas, clientes activos, pagos, cuotas, pipeline, estadísticas internas. NUNCA para buscar información externa.",
+          "workflowId": {
+            "__rl": true,
+            "value": "0t32XZ9AuQXB9fOn",
+            "mode": "id"
+          },
+          "workflowInputs": {
+            "mappingMode": "defineBelow",
+            "value": {
+              "sql_command": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('sql_command', 'Consulta SQL SELECT a ejecutar contra la BD del CRM', 'string') }}",
+              "tenant_slug": "={{ $('Webhook CRM IA').item.json.body.tenant_slug || 'demo' }}"
+            },
+            "schema": [
+              {
+                "id": "sql_command",
+                "displayName": "sql_command",
+                "required": true,
+                "type": "string"
+              },
+              {
+                "id": "tenant_slug",
+                "displayName": "tenant_slug",
+                "required": true,
+                "type": "string"
+              }
+            ]
+          }
+        },
+        "id": "tool-db",
+        "name": "Consultar Base de Datos",
+        "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+        "typeVersion": 2.2,
+        "position": [
+          -400,
+          224
+        ]
+      },
+      {
+        "parameters": {
+          "description": "Busca conocimiento abierto y actualizado sobre el sector inmobiliario: tendencias del mercado, consejos de inversión en terrenos y propiedades, estrategias de venta, procesos legales de escrituración, noticias del sector, precios de referencia del mercado. NUNCA buscar datos internos de clientes, listados de propiedades de terceros ni información privada de otras inmobiliarias.",
+          "workflowId": {
+            "__rl": true,
+            "value": "mRwlkAD4TQQuhrpE",
+            "mode": "id"
+          },
+          "workflowInputs": {
+            "mappingMode": "defineBelow",
+            "value": {
+              "query": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('query', 'Búsqueda de conocimiento abierto sobre el sector inmobiliario', 'string') }}"
+            },
+            "schema": [
+              {
+                "id": "query",
+                "displayName": "query",
+                "required": true,
+                "type": "string"
+              }
+            ]
+          }
+        },
+        "id": "tool-web",
+        "name": "Buscar en Web",
+        "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+        "typeVersion": 2.2,
+        "position": [
+          48,
+          224
+        ]
+      },
+      {
+        "parameters": {
+          "respondWith": "json",
+          "responseBody": "={{ { \"respuesta\": $json.output, \"ok\": true } }}",
+          "options": {
+            "responseHeaders": {
+              "entries": [
+                {
+                  "name": "Access-Control-Allow-Origin",
+                  "value": "*"
+                },
+                {
+                  "name": "Access-Control-Allow-Headers",
+                  "value": "Content-Type"
+                }
+              ]
+            }
+          }
+        },
+        "id": "respond-crm",
+        "name": "Responder al CRM",
+        "type": "n8n-nodes-base.respondToWebhook",
+        "typeVersion": 1.5,
+        "position": [
+          224,
+          0
+        ]
+      }
+    ],
+    "connections": {
+      "Webhook CRM IA": {
+        "main": [
+          [
+            {
+              "node": "Agente Orquestador",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "GPT-4.1-mini": {
+        "ai_languageModel": [
+          [
+            {
+              "node": "Agente Orquestador",
+              "type": "ai_languageModel",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Memoria Sesion": {
+        "ai_memory": [
+          [
+            {
+              "node": "Agente Orquestador",
+              "type": "ai_memory",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Consultar Base de Datos": {
+        "ai_tool": [
+          [
+            {
+              "node": "Agente Orquestador",
+              "type": "ai_tool",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Buscar en Web": {
+        "ai_tool": [
+          [
+            {
+              "node": "Agente Orquestador",
+              "type": "ai_tool",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Agente Orquestador": {
+        "main": [
+          [
+            {
+              "node": "Responder al CRM",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "authors": "Arnaldo Ayala",
+    "name": null,
+    "description": null,
+    "autosaved": false
+  },
+  "tags": [
+    {
+      "id": "sin-tag",
+      "name": "sin-tag"
+    }
+  ]
+}
