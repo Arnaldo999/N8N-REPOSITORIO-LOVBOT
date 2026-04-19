@@ -1,0 +1,106 @@
+{
+  "updatedAt": "2026-04-18T10:02:11.175Z",
+  "createdAt": "2026-04-18T09:45:11.456Z",
+  "id": "fo2SJPKESCCOPDLY",
+  "name": "📹 DEMO META REVIEW — Envío hello_world (Robert)",
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "id": "trigger-manual",
+      "name": "▶️ EJECUTAR ESTE WORKFLOW (clic acá)",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        240,
+        300
+      ],
+      "parameters": {},
+      "notes": "INSTRUCCIONES PARA EL VIDEO:\n\n1. Iniciá grabación con OBS (1280x720)\n2. Mostrá el panel Meta con el cURL oficial (~15s)\n3. Volvé acá a n8n y mostrá esta estructura\n4. Hacé clic en 'Execute Workflow' (botón naranja arriba)\n5. Mostrá la respuesta JSON 200 OK del nodo siguiente\n6. Cambiá a WhatsApp Web y mostrá el mensaje recibido\n7. Detené grabación + subí el video a Meta\n\nEl número destino es el de Robert (+1 226-899-6991, formato 12268996991).\nEl WABA y el token ya están preconfigurados — no toques nada, solo Execute."
+    },
+    {
+      "id": "http-send-whatsapp",
+      "name": "Enviar hello_world via Meta Graph API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        560,
+        300
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://graph.facebook.com/v22.0/735319949657644/messages",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"messaging_product\": \"whatsapp\",\n  \"to\": \"12268996991\",\n  \"type\": \"template\",\n  \"template\": {\n    \"name\": \"hello_world\",\n    \"language\": {\n      \"code\": \"en_US\"\n    }\n  }\n}",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true
+            }
+          }
+        }
+      },
+      "notes": "Endpoint: POST graph.facebook.com/v22.0/{PHONE_NUMBER_ID}/messages\n\nValores ya configurados:\n- PHONE_NUMBER_ID: 735319949657644 (WABA Robert: +52 998 743 4234)\n- Bearer token: leído de env LOVBOT_META_ACCESS_TOKEN (Coolify)\n- Destinatario: 12268996991 (+1 226-899-6991, número personal Robert)\n- Template: hello_world (preaprobado en es_MX/en_US)\n\nRespuesta esperada: HTTP 200 con message_id y wa_id.",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "z37qsm7MWbHGxXHa",
+          "name": "Meta - Proveedor Lovbot"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "▶️ EJECUTAR ESTE WORKFLOW (clic acá)": {
+      "main": [
+        [
+          {
+            "node": "Enviar hello_world via Meta Graph API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "staticData": null,
+  "meta": null,
+  "pinData": null,
+  "versionId": "455ddb88-7af0-48d6-9014-dd0462b41648",
+  "activeVersionId": null,
+  "triggerCount": 0,
+  "shared": [
+    {
+      "updatedAt": "2026-04-18T09:45:11.456Z",
+      "createdAt": "2026-04-18T09:45:11.456Z",
+      "role": "workflow:owner",
+      "workflowId": "fo2SJPKESCCOPDLY",
+      "projectId": "FDln7onnPuCnwaFe"
+    }
+  ],
+  "activeVersion": null,
+  "tags": [
+    {
+      "id": "sin-tag",
+      "name": "sin-tag"
+    }
+  ]
+}
