@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-04-16T13:49:16.107Z",
+  "updatedAt": "2026-04-21T16:03:56.395Z",
   "createdAt": "2026-04-16T08:58:09.233Z",
   "id": "0t32XZ9AuQXB9fOn",
   "name": "CRM IA - Ejecutar SQL",
@@ -30,7 +30,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const raw = $input.first().json.sql_command || '';\nconst tenant = $input.first().json.tenant_slug || 'demo';\n\nfunction extraerSQL(input) {\n  let s = input.trim();\n  const mdMatch = s.match(/```(?:sql)?\\s*([\\s\\S]*?)```/i);\n  if (mdMatch) s = mdMatch[1].trim();\n  const selectIdx = s.search(/\\bSELECT\\b/i);\n  if (selectIdx > 0) s = s.slice(selectIdx);\n  s = s.replace(/;\\s*$/, '').trim();\n  return s;\n}\n\nfunction validarSQL(query) {\n  if (!query || query.trim().length === 0) return false;\n  const cleaned = query.trim();\n  // Word boundaries para evitar falsos positivos en columnas como created_at, inserted_by, etc.\n  const prohibidos = /\\bDROP\\b|\\bTRUNCATE\\b|\\bDELETE\\b|\\bUPDATE\\b|\\bALTER\\b|\\bINSERT\\b|\\bCREATE\\b|\\bGRANT\\b|\\bREVOKE\\b|\\bCOPY\\b|information_schema|pg_catalog/i;\n  if (prohibidos.test(cleaned)) return false;\n  if (!/^SELECT\\b/i.test(cleaned)) return false;\n  return true;\n}\n\nfunction inyectarTenant(query, tenantSlug) {\n  if (query.toLowerCase().includes('tenant_slug')) return query;\n  const hasWhere = /\\bWHERE\\b/i.test(query);\n  const orderMatch = query.match(/(ORDER\\s+BY|LIMIT|OFFSET)/i);\n  if (orderMatch) {\n    const idx = query.toLowerCase().indexOf(orderMatch[0].toLowerCase());\n    const before = query.slice(0, idx).trimEnd();\n    const after = query.slice(idx);\n    return hasWhere\n      ? before + ` AND tenant_slug = '${tenantSlug}' ` + after\n      : before + ` WHERE tenant_slug = '${tenantSlug}' ` + after;\n  }\n  return hasWhere\n    ? query + ` AND tenant_slug = '${tenantSlug}'`\n    : query + ` WHERE tenant_slug = '${tenantSlug}'`;\n}\n\nconst sqlLimpio = extraerSQL(raw);\nconst esValida = validarSQL(sqlLimpio);\nconst sqlFinal = esValida ? inyectarTenant(sqlLimpio, tenant) : '';\n\nreturn [{ json: {\n  resultado: esValida ? 'SQL_VALIDO' : 'SQL_INVALIDO',\n  sql_final: sqlFinal,\n  sql_original: raw,\n  tenant_slug: tenant\n}}];"
+        "jsCode": "const raw = $input.first().json.sql_command || '';\n\nfunction extraerSQL(input) {\n  let s = input.trim();\n  const mdMatch = s.match(/```(?:sql)?\\s*([\\s\\S]*?)```/i);\n  if (mdMatch) s = mdMatch[1].trim();\n  const selectIdx = s.search(/\\bSELECT\\b/i);\n  if (selectIdx > 0) s = s.slice(selectIdx);\n  s = s.replace(/;\\s*$/, '').trim();\n  return s;\n}\n\nfunction validarSQL(query) {\n  if (!query || query.trim().length === 0) return false;\n  const cleaned = query.trim();\n  // Solo SELECT. Bloquear DDL/DML.\n  const prohibidos = /\\bDROP\\b|\\bTRUNCATE\\b|\\bDELETE\\b|\\bUPDATE\\b|\\bALTER\\b|\\bINSERT\\b|\\bCREATE\\b|\\bGRANT\\b|\\bREVOKE\\b|\\bCOPY\\b|information_schema|pg_catalog/i;\n  if (prohibidos.test(cleaned)) return false;\n  if (!/^SELECT\\b/i.test(cleaned)) return false;\n  return true;\n}\n\nconst sqlLimpio = extraerSQL(raw);\nconst esValida = validarSQL(sqlLimpio);\n\n// Arquitectura 1 DB x cliente: cada credencial PG apunta a la DB del cliente.\n// NO hace falta inyectar tenant_slug: la DB ya está aislada por engine.\nconst sqlFinal = esValida ? sqlLimpio : '';\n\nreturn [{ json: {\n  resultado: esValida ? 'SQL_VALIDO' : 'SQL_INVALIDO',\n  sql_final: sqlFinal,\n  sql_original: raw\n}}];"
       },
       "id": "validate-sql",
       "name": "Validar SQL",
@@ -186,8 +186,8 @@
     "templateCredsSetupCompleted": true
   },
   "pinData": {},
-  "versionId": "1d4102c3-b650-463f-b9dd-52555cd0c9fb",
-  "activeVersionId": "1d4102c3-b650-463f-b9dd-52555cd0c9fb",
+  "versionId": "05ef6955-944c-4399-b0e6-d1627a39cb28",
+  "activeVersionId": "05ef6955-944c-4399-b0e6-d1627a39cb28",
   "triggerCount": 0,
   "shared": [
     {
@@ -199,9 +199,9 @@
     }
   ],
   "activeVersion": {
-    "updatedAt": "2026-04-16T13:49:16.108Z",
-    "createdAt": "2026-04-16T13:49:16.108Z",
-    "versionId": "1d4102c3-b650-463f-b9dd-52555cd0c9fb",
+    "updatedAt": "2026-04-21T16:03:56.397Z",
+    "createdAt": "2026-04-21T16:03:56.397Z",
+    "versionId": "05ef6955-944c-4399-b0e6-d1627a39cb28",
     "workflowId": "0t32XZ9AuQXB9fOn",
     "nodes": [
       {
@@ -228,7 +228,7 @@
       },
       {
         "parameters": {
-          "jsCode": "const raw = $input.first().json.sql_command || '';\nconst tenant = $input.first().json.tenant_slug || 'demo';\n\nfunction extraerSQL(input) {\n  let s = input.trim();\n  const mdMatch = s.match(/```(?:sql)?\\s*([\\s\\S]*?)```/i);\n  if (mdMatch) s = mdMatch[1].trim();\n  const selectIdx = s.search(/\\bSELECT\\b/i);\n  if (selectIdx > 0) s = s.slice(selectIdx);\n  s = s.replace(/;\\s*$/, '').trim();\n  return s;\n}\n\nfunction validarSQL(query) {\n  if (!query || query.trim().length === 0) return false;\n  const cleaned = query.trim();\n  // Word boundaries para evitar falsos positivos en columnas como created_at, inserted_by, etc.\n  const prohibidos = /\\bDROP\\b|\\bTRUNCATE\\b|\\bDELETE\\b|\\bUPDATE\\b|\\bALTER\\b|\\bINSERT\\b|\\bCREATE\\b|\\bGRANT\\b|\\bREVOKE\\b|\\bCOPY\\b|information_schema|pg_catalog/i;\n  if (prohibidos.test(cleaned)) return false;\n  if (!/^SELECT\\b/i.test(cleaned)) return false;\n  return true;\n}\n\nfunction inyectarTenant(query, tenantSlug) {\n  if (query.toLowerCase().includes('tenant_slug')) return query;\n  const hasWhere = /\\bWHERE\\b/i.test(query);\n  const orderMatch = query.match(/(ORDER\\s+BY|LIMIT|OFFSET)/i);\n  if (orderMatch) {\n    const idx = query.toLowerCase().indexOf(orderMatch[0].toLowerCase());\n    const before = query.slice(0, idx).trimEnd();\n    const after = query.slice(idx);\n    return hasWhere\n      ? before + ` AND tenant_slug = '${tenantSlug}' ` + after\n      : before + ` WHERE tenant_slug = '${tenantSlug}' ` + after;\n  }\n  return hasWhere\n    ? query + ` AND tenant_slug = '${tenantSlug}'`\n    : query + ` WHERE tenant_slug = '${tenantSlug}'`;\n}\n\nconst sqlLimpio = extraerSQL(raw);\nconst esValida = validarSQL(sqlLimpio);\nconst sqlFinal = esValida ? inyectarTenant(sqlLimpio, tenant) : '';\n\nreturn [{ json: {\n  resultado: esValida ? 'SQL_VALIDO' : 'SQL_INVALIDO',\n  sql_final: sqlFinal,\n  sql_original: raw,\n  tenant_slug: tenant\n}}];"
+          "jsCode": "const raw = $input.first().json.sql_command || '';\n\nfunction extraerSQL(input) {\n  let s = input.trim();\n  const mdMatch = s.match(/```(?:sql)?\\s*([\\s\\S]*?)```/i);\n  if (mdMatch) s = mdMatch[1].trim();\n  const selectIdx = s.search(/\\bSELECT\\b/i);\n  if (selectIdx > 0) s = s.slice(selectIdx);\n  s = s.replace(/;\\s*$/, '').trim();\n  return s;\n}\n\nfunction validarSQL(query) {\n  if (!query || query.trim().length === 0) return false;\n  const cleaned = query.trim();\n  // Solo SELECT. Bloquear DDL/DML.\n  const prohibidos = /\\bDROP\\b|\\bTRUNCATE\\b|\\bDELETE\\b|\\bUPDATE\\b|\\bALTER\\b|\\bINSERT\\b|\\bCREATE\\b|\\bGRANT\\b|\\bREVOKE\\b|\\bCOPY\\b|information_schema|pg_catalog/i;\n  if (prohibidos.test(cleaned)) return false;\n  if (!/^SELECT\\b/i.test(cleaned)) return false;\n  return true;\n}\n\nconst sqlLimpio = extraerSQL(raw);\nconst esValida = validarSQL(sqlLimpio);\n\n// Arquitectura 1 DB x cliente: cada credencial PG apunta a la DB del cliente.\n// NO hace falta inyectar tenant_slug: la DB ya está aislada por engine.\nconst sqlFinal = esValida ? sqlLimpio : '';\n\nreturn [{ json: {\n  resultado: esValida ? 'SQL_VALIDO' : 'SQL_INVALIDO',\n  sql_final: sqlFinal,\n  sql_original: raw\n}}];"
         },
         "id": "validate-sql",
         "name": "Validar SQL",
