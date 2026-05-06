@@ -1,0 +1,154 @@
+{
+  "updatedAt": "2026-05-05T15:47:55.321Z",
+  "createdAt": "2026-05-05T15:47:55.321Z",
+  "id": "yOkAUWr7aup0rpup",
+  "name": "📋 Google Sheets → CRM Lovbot (Leads contacto web)",
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "id": "trigger-sheets",
+      "name": "Google Sheets Trigger",
+      "type": "n8n-nodes-base.googleSheetsTrigger",
+      "typeVersion": 4,
+      "position": [
+        240,
+        300
+      ],
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1EygCLUl-A2NoOj_UHkSheo1hIoNRKAU_0xO6587KXk4"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Sheet1"
+        },
+        "event": "rowAdded",
+        "pollTime": "everyMinute"
+      }
+    },
+    {
+      "id": "mapear-campos",
+      "name": "Mapear campos al CRM",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        480,
+        300
+      ],
+      "parameters": {
+        "jsCode": "// Mapeo columnas Google Sheets → schema agencia_leads\n// Ajustar los nombres de columna según el sheet real de Robert\nconst row = $input.first().json;\n\n// Intentar leer nombre completo o separado\nconst nombreCompleto = row['Nombre'] || row['nombre'] || row['Nombre completo'] || '';\nconst partes = nombreCompleto.trim().split(' ');\nconst nombre = partes[0] || '';\nconst apellido = partes.slice(1).join(' ') || row['Apellido'] || row['apellido'] || '';\n\n// Teléfono / WhatsApp\nconst whatsapp = String(row['Teléfono'] || row['Telefono'] || row['telefono'] || row['WhatsApp'] || row['whatsapp'] || '').replace(/\\s+/g, '');\n\n// Email\nconst email = row['Email'] || row['Correo'] || row['correo'] || row['email'] || null;\n\n// Empresa / Agencia\nconst empresa = row['Empresa'] || row['empresa'] || row['Agencia'] || row['Compañía'] || null;\n\n// Mensaje / Notas\nconst notas = row['Mensaje'] || row['mensaje'] || row['Comentarios'] || row['comentarios'] || row['Consulta'] || null;\n\n// Servicio / Interés\nconst servicio = row['Servicio'] || row['servicio'] || row['Interés'] || row['interes'] || null;\nconst notasCompletas = [servicio ? `Servicio: ${servicio}` : null, notas].filter(Boolean).join(' | ');\n\nreturn [{\n  json: {\n    nombre_contacto: nombre,\n    apellido_contacto: apellido,\n    nombre_empresa: empresa,\n    whatsapp: whatsapp,\n    email: email,\n    fuente_id: 1,\n    canal_raw: 'formulario_web',\n    estado: 'lead',\n    notas: notasCompletas || null\n  }\n}];"
+      }
+    },
+    {
+      "id": "post-crm",
+      "name": "POST → CRM Lovbot",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        720,
+        300
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://agentes.lovbot.ai/agencia/leads",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": false
+            }
+          }
+        }
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "lovbot-admin-header",
+          "name": "Lovbot Admin Token"
+        }
+      }
+    },
+    {
+      "id": "log-resultado",
+      "name": "Log resultado",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        960,
+        300
+      ],
+      "parameters": {}
+    }
+  ],
+  "connections": {
+    "Google Sheets Trigger": {
+      "main": [
+        [
+          {
+            "node": "Mapear campos al CRM",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mapear campos al CRM": {
+      "main": [
+        [
+          {
+            "node": "POST → CRM Lovbot",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "POST → CRM Lovbot": {
+      "main": [
+        [
+          {
+            "node": "Log resultado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "timezone": "America/Mexico_City",
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "staticData": null,
+  "meta": null,
+  "pinData": null,
+  "versionId": "24f29e7d-0968-4ad5-912d-ae1f300acec8",
+  "activeVersionId": null,
+  "triggerCount": 0,
+  "shared": [
+    {
+      "updatedAt": "2026-05-05T15:47:55.321Z",
+      "createdAt": "2026-05-05T15:47:55.321Z",
+      "role": "workflow:owner",
+      "workflowId": "yOkAUWr7aup0rpup",
+      "projectId": "FDln7onnPuCnwaFe"
+    }
+  ],
+  "activeVersion": null,
+  "tags": [
+    {
+      "id": "sin-tag",
+      "name": "sin-tag"
+    }
+  ]
+}
