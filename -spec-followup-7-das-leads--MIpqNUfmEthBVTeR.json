@@ -1,0 +1,171 @@
+{
+  "updatedAt": "2026-06-05T22:49:29.103Z",
+  "createdAt": "2026-06-05T22:37:33.366Z",
+  "id": "MIpqNUfmEthBVTeR",
+  "name": "🔁 SPEC — Followup 7 días leads",
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "id": "cron-7d",
+      "name": "Una vez al día",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "days",
+              "daysInterval": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "http-7d",
+      "name": "POST followup-7d",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        300,
+        0
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://agentes.lovbot.ai/clientes/lovbot/marketing/admin/followup-7d",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Admin-Token",
+              "value": "lovbot-admin-2026"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "credentials": {}
+    }
+  ],
+  "connections": {
+    "Una vez al día": {
+      "main": [
+        [
+          {
+            "node": "POST followup-7d",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "timezone": "America/Argentina/Buenos_Aires",
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "none",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false,
+    "executionOrder": "v1"
+  },
+  "staticData": {
+    "node:Una vez al día": {
+      "recurrenceRules": []
+    }
+  },
+  "meta": null,
+  "pinData": null,
+  "versionId": "baf6978b-919b-4e54-ab8d-058536574da5",
+  "activeVersionId": "baf6978b-919b-4e54-ab8d-058536574da5",
+  "triggerCount": 1,
+  "shared": [
+    {
+      "updatedAt": "2026-06-05T22:37:33.366Z",
+      "createdAt": "2026-06-05T22:37:33.366Z",
+      "role": "workflow:owner",
+      "workflowId": "MIpqNUfmEthBVTeR",
+      "projectId": "FDln7onnPuCnwaFe"
+    }
+  ],
+  "activeVersion": {
+    "updatedAt": "2026-06-05T22:49:15.750Z",
+    "createdAt": "2026-06-05T22:49:15.750Z",
+    "versionId": "baf6978b-919b-4e54-ab8d-058536574da5",
+    "workflowId": "MIpqNUfmEthBVTeR",
+    "nodes": [
+      {
+        "id": "cron-7d",
+        "name": "Una vez al día",
+        "type": "n8n-nodes-base.scheduleTrigger",
+        "typeVersion": 1.2,
+        "position": [
+          0,
+          0
+        ],
+        "parameters": {
+          "rule": {
+            "interval": [
+              {
+                "field": "days",
+                "daysInterval": 1
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "http-7d",
+        "name": "POST followup-7d",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "position": [
+          300,
+          0
+        ],
+        "parameters": {
+          "method": "POST",
+          "url": "https://agentes.lovbot.ai/clientes/lovbot/marketing/admin/followup-7d",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "X-Admin-Token",
+                "value": "lovbot-admin-2026"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "credentials": {}
+      }
+    ],
+    "connections": {
+      "Una vez al día": {
+        "main": [
+          [
+            {
+              "node": "POST followup-7d",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "authors": "Arnaldo Ayala",
+    "name": null,
+    "description": null,
+    "autosaved": false
+  },
+  "tags": [
+    {
+      "id": "sin-tag",
+      "name": "sin-tag"
+    }
+  ]
+}
