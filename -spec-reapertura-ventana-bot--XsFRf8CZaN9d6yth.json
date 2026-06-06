@@ -1,0 +1,171 @@
+{
+  "updatedAt": "2026-06-05T22:49:26.803Z",
+  "createdAt": "2026-06-05T22:37:29.888Z",
+  "id": "XsFRf8CZaN9d6yth",
+  "name": "🔁 SPEC — Reapertura ventana bot",
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "id": "cron-reap",
+      "name": "Cada hora",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "http-reap",
+      "name": "POST reapertura-ventana",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        300,
+        0
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://agentes.lovbot.ai/clientes/lovbot/marketing/admin/reapertura-ventana",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Admin-Token",
+              "value": "lovbot-admin-2026"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "credentials": {}
+    }
+  ],
+  "connections": {
+    "Cada hora": {
+      "main": [
+        [
+          {
+            "node": "POST reapertura-ventana",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "timezone": "America/Argentina/Buenos_Aires",
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "none",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false,
+    "executionOrder": "v1"
+  },
+  "staticData": {
+    "node:Cada hora": {
+      "recurrenceRules": []
+    }
+  },
+  "meta": null,
+  "pinData": null,
+  "versionId": "34ff6150-2307-4f23-a42d-d3c79a2497cb",
+  "activeVersionId": "34ff6150-2307-4f23-a42d-d3c79a2497cb",
+  "triggerCount": 1,
+  "shared": [
+    {
+      "updatedAt": "2026-06-05T22:37:29.888Z",
+      "createdAt": "2026-06-05T22:37:29.888Z",
+      "role": "workflow:owner",
+      "workflowId": "XsFRf8CZaN9d6yth",
+      "projectId": "FDln7onnPuCnwaFe"
+    }
+  ],
+  "activeVersion": {
+    "updatedAt": "2026-06-05T22:49:12.579Z",
+    "createdAt": "2026-06-05T22:49:12.579Z",
+    "versionId": "34ff6150-2307-4f23-a42d-d3c79a2497cb",
+    "workflowId": "XsFRf8CZaN9d6yth",
+    "nodes": [
+      {
+        "id": "cron-reap",
+        "name": "Cada hora",
+        "type": "n8n-nodes-base.scheduleTrigger",
+        "typeVersion": 1.2,
+        "position": [
+          0,
+          0
+        ],
+        "parameters": {
+          "rule": {
+            "interval": [
+              {
+                "field": "hours",
+                "hoursInterval": 1
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "http-reap",
+        "name": "POST reapertura-ventana",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "position": [
+          300,
+          0
+        ],
+        "parameters": {
+          "method": "POST",
+          "url": "https://agentes.lovbot.ai/clientes/lovbot/marketing/admin/reapertura-ventana",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "X-Admin-Token",
+                "value": "lovbot-admin-2026"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "credentials": {}
+      }
+    ],
+    "connections": {
+      "Cada hora": {
+        "main": [
+          [
+            {
+              "node": "POST reapertura-ventana",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "authors": "Arnaldo Ayala",
+    "name": null,
+    "description": null,
+    "autosaved": false
+  },
+  "tags": [
+    {
+      "id": "sin-tag",
+      "name": "sin-tag"
+    }
+  ]
+}
