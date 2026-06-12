@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-06-05T22:49:26.803Z",
+  "updatedAt": "2026-06-11T15:26:28.039Z",
   "createdAt": "2026-06-05T22:37:29.888Z",
   "id": "XsFRf8CZaN9d6yth",
   "name": "🔁 SPEC — Reapertura ventana bot",
@@ -43,7 +43,7 @@
           "parameters": [
             {
               "name": "X-Admin-Token",
-              "value": "lovbot-admin-2026"
+              "value": "={{ $env.LOVBOT_ADMIN_TOKEN }}"
             }
           ]
         },
@@ -80,8 +80,8 @@
   },
   "meta": null,
   "pinData": null,
-  "versionId": "34ff6150-2307-4f23-a42d-d3c79a2497cb",
-  "activeVersionId": "34ff6150-2307-4f23-a42d-d3c79a2497cb",
+  "versionId": "3620af5a-3e43-4df2-97a9-1143e2a793cd",
+  "activeVersionId": "3620af5a-3e43-4df2-97a9-1143e2a793cd",
   "triggerCount": 1,
   "shared": [
     {
@@ -93,9 +93,9 @@
     }
   ],
   "activeVersion": {
-    "updatedAt": "2026-06-05T22:49:12.579Z",
-    "createdAt": "2026-06-05T22:49:12.579Z",
-    "versionId": "34ff6150-2307-4f23-a42d-d3c79a2497cb",
+    "updatedAt": "2026-06-11T15:26:28.041Z",
+    "createdAt": "2026-06-11T15:26:28.041Z",
+    "versionId": "3620af5a-3e43-4df2-97a9-1143e2a793cd",
     "workflowId": "XsFRf8CZaN9d6yth",
     "nodes": [
       {
@@ -135,7 +135,7 @@
             "parameters": [
               {
                 "name": "X-Admin-Token",
-                "value": "lovbot-admin-2026"
+                "value": "={{ $env.LOVBOT_ADMIN_TOKEN }}"
               }
             ]
           },
