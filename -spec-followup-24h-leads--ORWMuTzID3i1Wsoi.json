@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-06-05T22:49:24.304Z",
+  "updatedAt": "2026-06-11T15:26:08.844Z",
   "createdAt": "2026-06-05T22:37:25.912Z",
   "id": "ORWMuTzID3i1Wsoi",
   "name": "🔁 SPEC — Followup 24h leads",
@@ -43,7 +43,7 @@
           "parameters": [
             {
               "name": "X-Admin-Token",
-              "value": "lovbot-admin-2026"
+              "value": "={{ $env.LOVBOT_ADMIN_TOKEN }}"
             }
           ]
         },
@@ -80,8 +80,8 @@
   },
   "meta": null,
   "pinData": null,
-  "versionId": "7b2e86a7-f4bf-43e4-8163-dd66e3162c5a",
-  "activeVersionId": "7b2e86a7-f4bf-43e4-8163-dd66e3162c5a",
+  "versionId": "8c0522f5-fbcf-4749-949e-d52d060063f0",
+  "activeVersionId": "8c0522f5-fbcf-4749-949e-d52d060063f0",
   "triggerCount": 1,
   "shared": [
     {
@@ -93,9 +93,9 @@
     }
   ],
   "activeVersion": {
-    "updatedAt": "2026-06-05T22:49:09.214Z",
-    "createdAt": "2026-06-05T22:49:09.214Z",
-    "versionId": "7b2e86a7-f4bf-43e4-8163-dd66e3162c5a",
+    "updatedAt": "2026-06-11T15:26:08.846Z",
+    "createdAt": "2026-06-11T15:26:08.846Z",
+    "versionId": "8c0522f5-fbcf-4749-949e-d52d060063f0",
     "workflowId": "ORWMuTzID3i1Wsoi",
     "nodes": [
       {
@@ -135,7 +135,7 @@
             "parameters": [
               {
                 "name": "X-Admin-Token",
-                "value": "lovbot-admin-2026"
+                "value": "={{ $env.LOVBOT_ADMIN_TOKEN }}"
               }
             ]
           },
