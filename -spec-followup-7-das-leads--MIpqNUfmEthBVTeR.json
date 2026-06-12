@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-06-05T22:49:29.103Z",
+  "updatedAt": "2026-06-11T15:26:26.797Z",
   "createdAt": "2026-06-05T22:37:33.366Z",
   "id": "MIpqNUfmEthBVTeR",
   "name": "🔁 SPEC — Followup 7 días leads",
@@ -43,7 +43,7 @@
           "parameters": [
             {
               "name": "X-Admin-Token",
-              "value": "lovbot-admin-2026"
+              "value": "={{ $env.LOVBOT_ADMIN_TOKEN }}"
             }
           ]
         },
@@ -80,8 +80,8 @@
   },
   "meta": null,
   "pinData": null,
-  "versionId": "baf6978b-919b-4e54-ab8d-058536574da5",
-  "activeVersionId": "baf6978b-919b-4e54-ab8d-058536574da5",
+  "versionId": "6e5ac5b8-0dcb-4774-9113-c8705cbf784d",
+  "activeVersionId": "6e5ac5b8-0dcb-4774-9113-c8705cbf784d",
   "triggerCount": 1,
   "shared": [
     {
@@ -93,9 +93,9 @@
     }
   ],
   "activeVersion": {
-    "updatedAt": "2026-06-05T22:49:15.750Z",
-    "createdAt": "2026-06-05T22:49:15.750Z",
-    "versionId": "baf6978b-919b-4e54-ab8d-058536574da5",
+    "updatedAt": "2026-06-11T15:26:26.798Z",
+    "createdAt": "2026-06-11T15:26:26.798Z",
+    "versionId": "6e5ac5b8-0dcb-4774-9113-c8705cbf784d",
     "workflowId": "MIpqNUfmEthBVTeR",
     "nodes": [
       {
@@ -135,7 +135,7 @@
             "parameters": [
               {
                 "name": "X-Admin-Token",
-                "value": "lovbot-admin-2026"
+                "value": "={{ $env.LOVBOT_ADMIN_TOKEN }}"
               }
             ]
           },
