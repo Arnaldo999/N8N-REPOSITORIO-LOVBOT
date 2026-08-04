@@ -1,0 +1,171 @@
+{
+  "updatedAt": "2026-08-03T18:02:35.891Z",
+  "createdAt": "2026-08-03T18:02:35.891Z",
+  "id": "dhP31Yh4RPPJ41ov",
+  "name": "🔁 SPEC — Followup 14 días leads",
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "id": "cron-14d",
+      "name": "Una vez al día",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "days",
+              "daysInterval": 1,
+              "triggerAtHour": 3,
+              "triggerAtMinute": 30
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "http-14d",
+      "name": "POST followup-14d",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        300,
+        0
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://agentes.lovbot.ai/clientes/lovbot/marketing/admin/followup-14d",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "N7dVm0r6sikst6R1",
+          "name": "Lovbot Admin Token (backend)"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Una vez al día": {
+      "main": [
+        [
+          {
+            "node": "POST followup-14d",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "America/Argentina/Buenos_Aires",
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "none",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "staticData": {
+    "node:Una vez al día": {
+      "recurrenceRules": []
+    }
+  },
+  "meta": null,
+  "pinData": null,
+  "versionId": "8b1c3a44-1612-4145-8b4a-dda9708d84ac",
+  "activeVersionId": "8b1c3a44-1612-4145-8b4a-dda9708d84ac",
+  "triggerCount": 1,
+  "shared": [
+    {
+      "updatedAt": "2026-08-03T18:02:35.891Z",
+      "createdAt": "2026-08-03T18:02:35.891Z",
+      "role": "workflow:owner",
+      "workflowId": "dhP31Yh4RPPJ41ov",
+      "projectId": "FDln7onnPuCnwaFe"
+    }
+  ],
+  "activeVersion": {
+    "updatedAt": "2026-08-03T18:02:35.900Z",
+    "createdAt": "2026-08-03T18:02:35.900Z",
+    "versionId": "8b1c3a44-1612-4145-8b4a-dda9708d84ac",
+    "workflowId": "dhP31Yh4RPPJ41ov",
+    "nodes": [
+      {
+        "id": "cron-14d",
+        "name": "Una vez al día",
+        "type": "n8n-nodes-base.scheduleTrigger",
+        "typeVersion": 1.2,
+        "position": [
+          0,
+          0
+        ],
+        "parameters": {
+          "rule": {
+            "interval": [
+              {
+                "field": "days",
+                "daysInterval": 1,
+                "triggerAtHour": 3,
+                "triggerAtMinute": 30
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "http-14d",
+        "name": "POST followup-14d",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "position": [
+          300,
+          0
+        ],
+        "parameters": {
+          "method": "POST",
+          "url": "https://agentes.lovbot.ai/clientes/lovbot/marketing/admin/followup-14d",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "options": {}
+        },
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "N7dVm0r6sikst6R1",
+            "name": "Lovbot Admin Token (backend)"
+          }
+        }
+      }
+    ],
+    "connections": {
+      "Una vez al día": {
+        "main": [
+          [
+            {
+              "node": "POST followup-14d",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "authors": "Arnaldo Ayala",
+    "name": null,
+    "description": null,
+    "autosaved": false
+  },
+  "tags": [
+    {
+      "id": "sin-tag",
+      "name": "sin-tag"
+    }
+  ]
+}
