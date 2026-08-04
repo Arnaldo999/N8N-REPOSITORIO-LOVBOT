@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-06-11T15:26:08.844Z",
+  "updatedAt": "2026-08-03T17:18:59.980Z",
   "createdAt": "2026-06-05T22:37:25.912Z",
   "id": "ORWMuTzID3i1Wsoi",
   "name": "🔁 SPEC — Followup 24h leads",
@@ -38,18 +38,18 @@
       "parameters": {
         "method": "POST",
         "url": "https://agentes.lovbot.ai/clientes/lovbot/marketing/admin/followup-24h",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            {
-              "name": "X-Admin-Token",
-              "value": "={{ $env.LOVBOT_ADMIN_TOKEN }}"
-            }
-          ]
-        },
-        "options": {}
+        "sendHeaders": false,
+        "headerParameters": {},
+        "options": {},
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth"
       },
-      "credentials": {}
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "N7dVm0r6sikst6R1",
+          "name": "Lovbot Admin Token (backend)"
+        }
+      }
     }
   ],
   "connections": {
@@ -80,8 +80,8 @@
   },
   "meta": null,
   "pinData": null,
-  "versionId": "8c0522f5-fbcf-4749-949e-d52d060063f0",
-  "activeVersionId": "8c0522f5-fbcf-4749-949e-d52d060063f0",
+  "versionId": "5ad97fde-7321-49b3-be29-4006345829c5",
+  "activeVersionId": "5ad97fde-7321-49b3-be29-4006345829c5",
   "triggerCount": 1,
   "shared": [
     {
@@ -93,9 +93,9 @@
     }
   ],
   "activeVersion": {
-    "updatedAt": "2026-06-11T15:26:08.846Z",
-    "createdAt": "2026-06-11T15:26:08.846Z",
-    "versionId": "8c0522f5-fbcf-4749-949e-d52d060063f0",
+    "updatedAt": "2026-08-03T17:18:59.982Z",
+    "createdAt": "2026-08-03T17:18:59.982Z",
+    "versionId": "5ad97fde-7321-49b3-be29-4006345829c5",
     "workflowId": "ORWMuTzID3i1Wsoi",
     "nodes": [
       {
@@ -130,18 +130,18 @@
         "parameters": {
           "method": "POST",
           "url": "https://agentes.lovbot.ai/clientes/lovbot/marketing/admin/followup-24h",
-          "sendHeaders": true,
-          "headerParameters": {
-            "parameters": [
-              {
-                "name": "X-Admin-Token",
-                "value": "={{ $env.LOVBOT_ADMIN_TOKEN }}"
-              }
-            ]
-          },
-          "options": {}
+          "sendHeaders": false,
+          "headerParameters": {},
+          "options": {},
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth"
         },
-        "credentials": {}
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "N7dVm0r6sikst6R1",
+            "name": "Lovbot Admin Token (backend)"
+          }
+        }
       }
     ],
     "connections": {
